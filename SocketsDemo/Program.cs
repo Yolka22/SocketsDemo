@@ -14,50 +14,76 @@ namespace SocketsDemo
     {
         static void Main(string[] args)
         {
-            // 1 net connection params
+
+            Dictionary<string, string> zodiacForecastMap = new Dictionary<string, string>
+        {
+            { "Aries", "Good fortune ahead" },
+            { "Taurus", "Luck is on your side" },
+            { "Gemini", "Stay cautious today" },
+            { "Cancer", "Positive vibes coming your way" },
+            { "Leo", "An exciting opportunity awaits" },
+            { "Virgo", "Things might get challenging" },
+            { "Libra", "Balance will be key today" },
+            { "Scorpio", "Trust your instincts" },
+            { "Sagittarius", "Adventure is calling" },
+            { "Capricorn", "Hard work will pay off" },
+            { "Aquarius", "Unexpected changes ahead" },
+            { "Pisces", "Creativity will flourish" }
+        };
+
             int port = 9001;
             IPAddress ip = IPAddress.Parse("127.0.0.1");
             IPEndPoint endPoint = new IPEndPoint(ip, port);
 
-            // 2 Listen socket 
             Socket listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
 
             try
             {
-                // 3 turn listen socket on
                 listener.Bind(endPoint);
                 listener.Listen(100);
                      
-                // 4 data transfer with clients
+
                 while (true)
                 {
-                    //4.1 -> create aceept soket
+
                     ForegroundColor = ConsoleColor.Cyan;
                     WriteLine("\n> Wait for requests from clients ...");
                     ResetColor();
 
                     Socket acceptor = listener.Accept();
 
-                    //4.2 -> taking input from client
                     byte[] message_buffer = new byte[4096];
                     int message_bytes_count = acceptor.Receive(message_buffer);
 
-                    //4.3 -> decoding and show message
-                    string message = Encoding.UTF8.GetString(message_buffer, 0, message_bytes_count);
 
-                    ForegroundColor = ConsoleColor.Magenta;
-                    WriteLine($"{DateTime.Now} -> {message}");
-                    ResetColor();
+                    string user_message = Encoding.UTF8.GetString(message_buffer, 0, message_bytes_count);
+                    WriteLine($"{user_message} {DateTime.Now}");
 
-                    // 4.4 -> processing request
-                    string response = "your request data is ..smth..";
+                    string response ="default";
 
-                    // 4.5 -> send response
+                    if (zodiacForecastMap.ContainsKey(user_message))
+                    {
+                        string forecast = zodiacForecastMap[user_message];
+                        response = $"Forecast for {user_message}: {forecast}";
+                    }
+                    else
+                    {
+                        response = "Sign not found :("; 
+                    }
+
+
                     byte[] response_buffer = Encoding.UTF8.GetBytes(response);
                     acceptor.Send(response_buffer);
 
-                    // 4.6 -> closing connection with client
+
                     acceptor.Shutdown(SocketShutdown.Both);
+                    acceptor.Close();
+
+
+                    if (user_message == "server/stop")
+                    {
+                        break;
+                    }
                 }
             }
             catch (Exception ex) 
